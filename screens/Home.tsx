@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { StyleSheet, ScrollView, View, FlatList } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  FlatList,
+  Pressable,
+  ListRenderItem,
+} from 'react-native';
 import Button from '../components/Button';
 
 import { Text } from '../components/Themed';
@@ -7,11 +13,57 @@ import TopMovers from '../components/TopMovers';
 import Watchlist from '../components/Watchlist';
 import LottieView from 'lottie-react-native';
 import Colors from '../constants/Colors';
+import TitleText from '../components/TitleText';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import NewsThumbnail from '../components/NewsThumbnail';
+import CommonStyles from '../constants/CommonStyles';
+import { useGatewayContext } from '../context/GatewayContext';
+import { apiKey, baseUrl, endpoint, queryOptions } from '../constants/Config';
+
+dayjs.extend(relativeTime);
 
 export default function Home() {
+  const { openExplorer } = useGatewayContext();
+  const [news, setNews] = React.useState<INews[]>([]);
+
+  const getNews = async () => {
+    const { sortBy, limit, search } = queryOptions;
+
+    const response = await fetch(
+      `${baseUrl}/${endpoint}?q=${search}&pageSize=${limit}&sortBy=${sortBy}&apiKey=${apiKey}`
+    );
+    const { articles } = await response.json();
+    setNews(articles as INews[]);
+  };
+
+  React.useEffect(() => {
+    getNews();
+  }, []);
+
+  const renderItem: ListRenderItem<INews> = React.useCallback(
+    ({ item }) => {
+      const { title, source, publishedAt, url, urlToImage } = item;
+      return (
+        <Pressable
+          onPress={() => openExplorer(url)}
+          style={styles.newsContainer}>
+          <View style={CommonStyles.flexOne}>
+            <Text style={CommonStyles.darkText}>
+              {`${source.name} • ${dayjs(publishedAt).fromNow()}`}
+            </Text>
+            <Text style={styles.newsTitle}>{title}</Text>
+          </View>
+          <NewsThumbnail uri={urlToImage} />
+        </Pressable>
+      );
+    },
+    [news]
+  );
+
   return (
-    <FlatList
-      data={[]}
+    <FlatList<INews>
+      data={news}
       contentContainerStyle={styles.container}
       ListHeaderComponent={
         <React.Fragment>
@@ -31,9 +83,11 @@ export default function Home() {
 
           <Watchlist />
           <TopMovers />
+          <TitleText title="News" />
         </React.Fragment>
       }
-      renderItem={null}
+      keyExtractor={(_, index) => `${index}`}
+      renderItem={renderItem}
     />
   );
 }
@@ -53,4 +107,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 25,
   },
+  newsContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 25,
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+  },
+  newsTitle: { marginTop: 5, fontSize: 18 },
 });
