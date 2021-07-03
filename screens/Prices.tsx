@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { StyleSheet, FlatList, Pressable } from 'react-native';
 
-import * as WebBrowser from 'expo-web-browser';
-
 import { Text, View } from '../components/Themed';
 import { useGatewayContext } from '../context/GatewayContext';
 import CoinIcon from '../components/CoinIcon';
@@ -12,14 +10,7 @@ import CommonStyles from '../constants/CommonStyles';
 import ChangePercent from '../components/ChangePercent';
 
 export default function Prices() {
-  const { assets } = useGatewayContext();
-
-  const openExplorer = async (url: string) => {
-    await WebBrowser.openBrowserAsync(url, {
-      controlsColor: Colors.darkText,
-      dismissButtonStyle: 'close',
-    });
-  };
+  const { assets, openExplorer } = useGatewayContext();
 
   return (
     <FlatList<ICryptoAssets>
